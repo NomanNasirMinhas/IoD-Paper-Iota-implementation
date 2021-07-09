@@ -52,7 +52,7 @@
   let dec_res = false;
   let dec_req = false;
   let gss_request = false;
-
+  let iota_hash = false;
   //For Intercept
   let intercepted = [];
 
@@ -143,7 +143,7 @@
     );
     DR_Conn_Reqs[index].accepted = true;
     connected = true;
-    alert(`Connecttion Established with Session Key ${session_key}`);
+    alert(`Connection Established with Session Key ${session_key}`);
     // incoming_DR_request = false;
   }
 
@@ -212,6 +212,7 @@
     dr_response = false;
     dec_res = false;
     dec_req = false;
+    iota_hash = false;
     if (Number.parseInt(request_id) < 1) {
       alert("Please Enter a Valid request ID");
     } else {
@@ -276,6 +277,9 @@
     });
   }
 
+  function setIotaHash(hash){
+    iota_hash = hash;
+  }
   async function add_to_iota(data) {
     console.log("In Add to IOTA");
     const depth = 3;
@@ -298,7 +302,8 @@
       })
       .then((bundle) => {
         // addTransaction(dbo, address, bundle[0].hash, type);
-        console.log("Added to IOTA with hash ", bundle[0].hash);
+        setIotaHash(bundle[0].hash);
+        // console.log("Added to IOTA with hash ", bundle[0].hash);
       })
       .catch((err) => {
         console.error(err);
@@ -314,7 +319,7 @@
 <main>
   <div class="container">
     <h2>
-      Blockchain-Envisioned Secure Data Delivery and Collection Scheme for <br
+      IOTA-Envisioned Secure Data Delivery and Collection Scheme for <br
       />5G-Based IoT-Enabled Internet of Drones Environment
     </h2>
     <h3>Sayeda Mahnoor Gilani</h3>
@@ -482,6 +487,10 @@
   {#if connected}
     <div class="container">
       <h2>Ground Station and Drone Communication</h2>
+      {#if iota_hash !=false}
+            <h5>Added to IOTA with Below Hash</h5>
+            <p>{iota_hash}</p>
+            {/if}
       <div>
         <div class="actor-container" style="width: 45%; display: inline-block;">
           <h2>Drone</h2>
