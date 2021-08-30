@@ -7,7 +7,6 @@
   console.log("Curves ", curves);
   let ciphers_list = crypto.getCiphers();
   console.log("Ciphers ", ciphers_list);
-
   const mongodb = require("mongodb").MongoClient;
   const uri =
     "mongodb://localhost:27017/?readPreference=primary&appname=MongoDB%20Compass&ssl=false";
@@ -56,6 +55,45 @@
   //For Intercept
   let intercepted = [];
 
+  //Functions for Verification
+  const sha256 = require("js-sha256").sha256;
+
+function getDroneCode(droneID, code){
+  let droneCode = code + droneID;
+  return sha256(droneCode.toString())
+}
+  function verifyDrone(){
+  let droneID = getDroneID();
+let code = getCode();
+
+  let agentCode = code + droneID;
+    let expectedCode = getVerificationCode(agentCode);
+    console.log(`Code sent to the drone - ${code}`);
+    console.log(`Drone should return - ${expectedCode}`);
+    console.log("****************************");
+
+    let droneCode = getDroneCode(droneID, code);
+    console.log(`Drone returned - ${droneCode}`);
+    console.log("****************************");
+    expectedCode === droneCode ? alert(`Drone Verified with code ${expectedCode}`) : alert(`Drone Not Verified`);
+    console.log(
+      `${expectedCode === droneCode ? "Drone Verified" : "Drone Not Verified"}`
+    );
+    console.log("****************************");
+    return expectedCode === droneCode
+  }
+
+  function getCode() {
+  return Math.floor(Math.random() * (90000 - 50000)) + 50000;
+  }
+
+  function getDroneID() {
+  return Math.floor(Math.random() * (30 - 10)) + 10;
+  }
+
+  function getVerificationCode(code) {
+    return sha256(code.toString());
+  }
   //Functions for Control Room Registration
   function send_cr_to_ra() {
     let req = {
@@ -135,7 +173,9 @@
   }
 
   function gss_to_dr_accept(index) {
-    session_key = get_shared_key(
+    let res = verifyDrone();
+    if (res == true)
+    {session_key = get_shared_key(
       GSS_id.pub_key,
       GSS_id.ecdh,
       DR_id.pub_key,
@@ -143,7 +183,8 @@
     );
     DR_Conn_Reqs[index].accepted = true;
     connected = true;
-    alert(`Connection Established with Session Key ${session_key}`);
+    alert(`Connection Established with Session Key ${session_key}`);}
+
     // incoming_DR_request = false;
   }
 
