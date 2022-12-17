@@ -272,25 +272,35 @@ let code = getCode();
       res = await res.json();
       dr_response = encrypt(JSON.stringify(res));
       var date = new Date();
-      add_to_mongo_db({
+      await add_to_iota(JSON.stringify({
         type: "drone_response",
         response: JSON.stringify(res),
         timestamp: date,
-      });
+      }));
+      // add_to_mongo_db({
+      //   type: "drone_response",
+      //   response: JSON.stringify(res),
+      //   timestamp: date,
+      // });
       console.log("response ", res);
     } else {
       alert("Invalid Request ID");
     }
   }
 
-  function dec_req_id() {
+  async function dec_req_id() {
     dec_req = decrypt(request_id);
     var date = new Date();
-    add_to_mongo_db({
+    await add_to_iota(JSON.stringify({
       type: "request_ID",
       req_ID: dec_req,
       timestamp: date,
-    });
+    }));
+    // add_to_mongo_db({
+    //   type: "request_ID",
+    //   req_ID: dec_req,
+    //   timestamp: date,
+    // });
   }
 
   async function dec_response() {
@@ -360,11 +370,10 @@ let code = getCode();
 <main>
   <div class="container">
     <h2>
-      IOTA-Envisioned Secure Data Delivery and Collection Scheme for <br
-      />5G-Based IoT-Enabled Internet of Drones Environment
+      IOTA-Based Secure Data Transmission System for Drones and Ground Support
     </h2>
-    <h3>Sayeda Mahnoor Gilani</h3>
     <h3>Noman Nasir Minhas</h3>
+    <h3>Maida Naveed</h3>
   </div>
   <div class="container" style="margin-top: 30px; background-color: #d1f2eb;">
     <h2>Actors</h2>
