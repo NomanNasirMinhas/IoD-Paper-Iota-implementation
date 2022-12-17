@@ -7,21 +7,17 @@
   console.log("Curves ", curves);
   let ciphers_list = crypto.getCiphers();
   console.log("Ciphers ", ciphers_list);
-  const mongodb = require("mongodb").MongoClient;
-  const uri =
-    "mongodb://localhost:27017/?readPreference=primary&appname=MongoDB%20Compass&ssl=false";
+  const { retrieveData, sendData, SingleNodeClient } = require("@iota/iota.js");
+  const { Converter } = require("@iota/util.js");
+  // const mongodb = require("mongodb").MongoClient;
+  // const uri =
+  //   "mongodb://localhost:27017/?readPreference=primary&appname=MongoDB%20Compass&ssl=false";
+  const client = new SingleNodeClient("https://chrysalis-nodes.iota.org");
 
-  const Iota = require("@iota/core");
-  const Converter = require("@iota/converter");
-  const node = "https://nodes.devnet.iota.org:443";
-  //   const node = getNode();
-  const iota = Iota.composeAPI({
-    provider: node,
-  });
-  const seed =
-    "PUEOTSEITFEVEWCWBTSIZM9NKRGJEIMXTULBACGFRQK9IMGICLBKW9TTEVSDQMGWKBXPVCBMMCXWMNPDX";
-  const address =
-    "HEQLOWORLDHELLOWORLDHELLOWORLDHELLOWORLDHELLOWORLDHELLOWORLDHELLOWORLDHELLOWOR99D";
+  // These are the default values from the Hornet alphanet configuration
+  const mnemonic =
+    "giant dynamic museum toddler six deny defense ostrich bomb access mercy blood explain muscle shoot shallow glad autumn author calm heavy hawk abuse rally";
+
   //for Registration Authority
   let RA_id = get_keys();
   let incoming_CR_request = false;
@@ -58,15 +54,15 @@
   //Functions for Verification
   const sha256 = require("js-sha256").sha256;
 
-function getDroneCode(droneID, code){
-  let droneCode = code + droneID;
-  return sha256(droneCode.toString())
-}
-  function verifyDrone(){
-  let droneID = getDroneID();
-let code = getCode();
+  function getDroneCode(droneID, code) {
+    let droneCode = code + droneID;
+    return sha256(droneCode.toString());
+  }
+  function verifyDrone() {
+    let droneID = getDroneID();
+    let code = getCode();
 
-  let agentCode = code + droneID;
+    let agentCode = code + droneID;
     let expectedCode = getVerificationCode(agentCode);
     console.log(`Code sent to the drone - ${code}`);
     console.log(`Drone should return - ${expectedCode}`);
@@ -75,20 +71,22 @@ let code = getCode();
     let droneCode = getDroneCode(droneID, code);
     console.log(`Drone returned - ${droneCode}`);
     console.log("****************************");
-    expectedCode === droneCode ? alert(`Drone Verified with code ${expectedCode}`) : alert(`Drone Not Verified`);
+    expectedCode === droneCode
+      ? alert(`Drone Verified with code ${expectedCode}`)
+      : alert(`Drone Not Verified`);
     console.log(
       `${expectedCode === droneCode ? "Drone Verified" : "Drone Not Verified"}`
     );
     console.log("****************************");
-    return expectedCode === droneCode
+    return expectedCode === droneCode;
   }
 
   function getCode() {
-  return Math.floor(Math.random() * (90000 - 50000)) + 50000;
+    return Math.floor(Math.random() * (90000 - 50000)) + 50000;
   }
 
   function getDroneID() {
-  return Math.floor(Math.random() * (30 - 10)) + 10;
+    return Math.floor(Math.random() * (30 - 10)) + 10;
   }
 
   function getVerificationCode(code) {
@@ -174,16 +172,17 @@ let code = getCode();
 
   function gss_to_dr_accept(index) {
     let res = verifyDrone();
-    if (res == true)
-    {session_key = get_shared_key(
-      GSS_id.pub_key,
-      GSS_id.ecdh,
-      DR_id.pub_key,
-      DR_id.ecdh
-    );
-    DR_Conn_Reqs[index].accepted = true;
-    connected = true;
-    alert(`Connection Established with Session Key ${session_key}`);}
+    if (res == true) {
+      session_key = get_shared_key(
+        GSS_id.pub_key,
+        GSS_id.ecdh,
+        DR_id.pub_key,
+        DR_id.ecdh
+      );
+      DR_Conn_Reqs[index].accepted = true;
+      connected = true;
+      alert(`Connection Established with Session Key ${session_key}`);
+    }
 
     // incoming_DR_request = false;
   }
@@ -272,11 +271,13 @@ let code = getCode();
       res = await res.json();
       dr_response = encrypt(JSON.stringify(res));
       var date = new Date();
-      await add_to_iota(JSON.stringify({
-        type: "drone_response",
-        response: JSON.stringify(res),
-        timestamp: date,
-      }));
+      await add_to_iota(
+        JSON.stringify({
+          type: "drone_response",
+          response: JSON.stringify(res),
+          timestamp: date,
+        })
+      );
       // add_to_mongo_db({
       //   type: "drone_response",
       //   response: JSON.stringify(res),
@@ -291,11 +292,13 @@ let code = getCode();
   async function dec_req_id() {
     dec_req = decrypt(request_id);
     var date = new Date();
-    await add_to_iota(JSON.stringify({
-      type: "request_ID",
-      req_ID: dec_req,
-      timestamp: date,
-    }));
+    await add_to_iota(
+      JSON.stringify({
+        type: "request_ID",
+        req_ID: dec_req,
+        timestamp: date,
+      })
+    );
     // add_to_mongo_db({
     //   type: "request_ID",
     //   req_ID: dec_req,
@@ -328,43 +331,12 @@ let code = getCode();
     });
   }
 
-  function setIotaHash(hash){
-    iota_hash = hash;
-  }
   async function add_to_iota(data) {
     console.log("In Add to IOTA");
-    const depth = 3;
-    const minimumWeightMagnitude = 9;
-    const messageInTrytes = Converter.asciiToTrytes(data);
-    const transfers = [
-      {
-        value: 0,
-        address: address,
-        message: messageInTrytes,
-      },
-    ];
-
-    console.log("Adding DataSet to DLT");
-    let t0 = performance.now();
-    await iota
-      .prepareTransfers(seed, transfers)
-      .then((trytes) => {
-        return iota.sendTrytes(trytes, depth, minimumWeightMagnitude);
-      })
-      .then((bundle) => {
-        // addTransaction(dbo, address, bundle[0].hash, type);
-        setIotaHash(bundle[0].hash);
-        // console.log("Added to IOTA with hash ", bundle[0].hash);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-    let t1 = performance.now();
-    console.log("Added DataSet to DLT");
-
-    console.log(`Time Taken ${t1 - t0}`);
+    console.time("TimeToIOTA");
+    const sendResult = await sendData(client, "IOD_POC", Converter.utf8ToBytes(data));
+    console.timeEnd("TimeToIOTA");
   }
-  
 </script>
 
 <main>
@@ -537,10 +509,10 @@ let code = getCode();
   {#if connected}
     <div class="container">
       <h2>Ground Station and Drone Communication</h2>
-      {#if iota_hash !=false}
-            <h5>Added to IOTA with Below Hash</h5>
-            <p>{iota_hash}</p>
-            {/if}
+      {#if iota_hash != false}
+        <h5>Added to IOTA with Below Hash</h5>
+        <p>{iota_hash}</p>
+      {/if}
       <div>
         <div class="actor-container" style="width: 45%; display: inline-block;">
           <h2>Drone</h2>
